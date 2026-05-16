@@ -367,11 +367,15 @@ LỊCH SỬ DỰ ĐOÁN
 
 const API_URL="/predict";
 
-// lưu phiên cuối
-let lastSession = null;
+// lưu phiên hiện tại
+let currentSession = null;
 
 // lưu lịch sử
 let historyData = [];
+
+// lưu dự đoán phiên trước
+let previousPredict = null;
+let previousSession = null;
 
 async function loadPredict(){
 
@@ -388,14 +392,64 @@ const session = data.Phien_hien_tai;
 
 if(!session) return;
 
-// ===== CHỐNG SPAM =====
-if(session == lastSession){
+// chống spam
+if(session === currentSession){
 return;
 }
 
-lastSession = session;
+// ===== KẾT QUẢ PHIÊN TRƯỚC =====
+const patternRaw =
+(data.Pattern || "").toUpperCase();
 
-// ===== DỰ ĐOÁN =====
+let pattern = "...";
+
+if(
+patternRaw.includes("XỈU") ||
+patternRaw.includes("XIU")
+){
+pattern = "XỈU";
+}
+
+if(
+patternRaw.includes("TÀI") ||
+patternRaw.includes("TAI")
+){
+pattern = "TÀI";
+}
+
+// ===== CHECK THẮNG THUA CHO PHIÊN CŨ =====
+if(previousSession){
+
+historyData = historyData.map(item=>{
+
+if(item.session === previousSession){
+
+if(pattern === "..."){
+
+item.statusText = "..";
+item.statusClass = "wait";
+
+}else if(item.predict === pattern){
+
+item.statusText = "THẮNG";
+item.statusClass = "win";
+
+}else{
+
+item.statusText = "THUA";
+item.statusClass = "lose";
+
+}
+
+}
+
+return item;
+
+});
+
+}
+
+// ===== DỰ ĐOÁN PHIÊN MỚI =====
 let predictRaw =
 (data.Du_doan || "Tài").toUpperCase();
 
@@ -405,86 +459,54 @@ predictRaw.includes("XIU")
 ? "XỈU"
 : "TÀI";
 
-// ===== KẾT QUẢ THẬT =====
-let patternRaw =
-(data.Pattern || "").toUpperCase();
-
-let pattern =
-patternRaw.includes("XỈU") ||
-patternRaw.includes("XIU")
-? "XỈU"
-:
-patternRaw.includes("TÀI") ||
-patternRaw.includes("TAI")
-? "TÀI"
-: "...";
-
 // ===== ĐỘ TIN CẬY =====
 let confidence =
 Math.floor(
 (data.Du_doan_confidence || 0.5) * 100
 );
 
-// luôn > 50%
+// luôn > 50
 if(confidence < 50){
-confidence = Math.floor(Math.random() * 30) + 60;
+confidence =
+Math.floor(Math.random() * 30) + 60;
 }
 
 // ===== UPDATE UI =====
-const resultBox =
-document.getElementById("result");
+document.getElementById("result").innerText =
+predict;
 
-resultBox.innerText = predict;
-
-resultBox.className =
+document.getElementById("result").className =
 predict === "TÀI"
 ? "result tai"
 : "result xiu";
 
-// phiên
 document.getElementById("session").innerText =
 "#" + session;
 
-// độ tin cậy
 document.getElementById("conf-text").innerText =
 confidence + "%";
 
 document.getElementById("bar").style.width =
 confidence + "%";
 
-// ===== THẮNG / THUA =====
-let statusText = "..";
-let statusClass = "wait";
-
-if(pattern !== "..."){
-
-if(pattern === predict){
-
-statusText = "THẮNG";
-statusClass = "win";
-
-}else{
-
-statusText = "THUA";
-statusClass = "lose";
-
-}
-
-}
-
-// ===== ADD HISTORY =====
+// ===== ADD PHIÊN MỚI =====
 historyData.unshift({
-session,
-predict,
-statusText,
-statusClass
+session: session,
+predict: predict,
+statusText: "..",
+statusClass: "wait"
 });
 
 // giới hạn 10 dòng
 historyData = historyData.slice(0,10);
 
-// render history
+// render
 renderHistory();
+
+// lưu phiên
+previousSession = session;
+previousPredict = predict;
+currentSession = session;
 
 }catch(err){
 
@@ -497,7 +519,7 @@ document.getElementById("result").innerText =
 
 }
 
-// ===== RENDER HISTORY =====
+// ===== RENDER =====
 function renderHistory(){
 
 const history =
@@ -531,10 +553,8 @@ ${item.statusText}
 
 }
 
-// load lần đầu
 loadPredict();
 
-// 5 giây check phiên mới
 setInterval(loadPredict,5000);
 
 </script>
