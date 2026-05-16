@@ -130,11 +130,6 @@ color:#FFD700;
 color:#ff3366;
 }
 
-.loading{
-color:white;
-font-size:22px;
-}
-
 .session{
 margin-top:25px;
 height:55px;
@@ -300,8 +295,8 @@ KẾT QUẢ DỰ ĐOÁN
 
 <div class="circle">
 
-<div id="result" class="result loading">
-LOADING
+<div id="result" class="result tai">
+TÀI
 </div>
 
 </div>
@@ -367,159 +362,13 @@ LỊCH SỬ DỰ ĐOÁN
 
 const API_URL="/predict";
 
-// lưu phiên hiện tại
 let currentSession = null;
 
-// lưu lịch sử
 let historyData = [];
 
-// lưu dự đoán phiên trước
-let previousPredict = null;
-let previousSession = null;
+let lastPredict = "TÀI";
 
-async function loadPredict(){
-
-try{
-
-const res = await fetch(API_URL + "?t=" + Date.now());
-
-const data = await res.json();
-
-console.log(data);
-
-// ===== PHIÊN HIỆN TẠI =====
-const session = data.Phien_hien_tai;
-
-if(!session) return;
-
-// chống spam
-if(session === currentSession){
-return;
-}
-
-// ===== KẾT QUẢ PHIÊN TRƯỚC =====
-const patternRaw =
-(data.Pattern || "").toUpperCase();
-
-let pattern = "...";
-
-if(
-patternRaw.includes("XỈU") ||
-patternRaw.includes("XIU")
-){
-pattern = "XỈU";
-}
-
-if(
-patternRaw.includes("TÀI") ||
-patternRaw.includes("TAI")
-){
-pattern = "TÀI";
-}
-
-// ===== CHECK THẮNG THUA CHO PHIÊN CŨ =====
-if(previousSession){
-
-historyData = historyData.map(item=>{
-
-if(item.session === previousSession){
-
-if(pattern === "..."){
-
-item.statusText = "..";
-item.statusClass = "wait";
-
-}else if(item.predict === pattern){
-
-item.statusText = "THẮNG";
-item.statusClass = "win";
-
-}else{
-
-item.statusText = "THUA";
-item.statusClass = "lose";
-
-}
-
-}
-
-return item;
-
-});
-
-}
-
-// ===== DỰ ĐOÁN PHIÊN MỚI =====
-let predictRaw =
-(data.Du_doan || "Tài").toUpperCase();
-
-let predict =
-predictRaw.includes("XỈU") ||
-predictRaw.includes("XIU")
-? "XỈU"
-: "TÀI";
-
-// ===== ĐỘ TIN CẬY =====
-let confidence =
-Math.floor(
-(data.Du_doan_confidence || 0.5) * 100
-);
-
-// luôn > 50
-if(confidence < 50){
-confidence =
-Math.floor(Math.random() * 30) + 60;
-}
-
-// ===== UPDATE UI =====
-document.getElementById("result").innerText =
-predict;
-
-document.getElementById("result").className =
-predict === "TÀI"
-? "result tai"
-: "result xiu";
-
-document.getElementById("session").innerText =
-"#" + session;
-
-document.getElementById("conf-text").innerText =
-confidence + "%";
-
-document.getElementById("bar").style.width =
-confidence + "%";
-
-// ===== ADD PHIÊN MỚI =====
-historyData.unshift({
-session: session,
-predict: predict,
-statusText: "..",
-statusClass: "wait"
-});
-
-// giới hạn 10 dòng
-historyData = historyData.slice(0,10);
-
-// render
-renderHistory();
-
-// lưu phiên
-previousSession = session;
-previousPredict = predict;
-currentSession = session;
-
-}catch(err){
-
-console.log(err);
-
-document.getElementById("result").innerText =
-"ERROR";
-
-}
-
-}
-
-// ===== RENDER =====
+// render history
 function renderHistory(){
 
 const history =
@@ -553,9 +402,158 @@ ${item.statusText}
 
 }
 
+// load api
+async function loadPredict(){
+
+try{
+
+const res =
+await fetch(API_URL + "?t=" + Date.now());
+
+const data =
+await res.json();
+
+console.log(data);
+
+// ===== PHIÊN =====
+const session =
+data.Phien_hien_tai;
+
+if(!session) return;
+
+// ===== CHỐNG SPAM =====
+if(session === currentSession){
+return;
+}
+
+// ===== KẾT QUẢ PHIÊN TRƯỚC =====
+let patternRaw =
+(data.Pattern || "").toUpperCase();
+
+let pattern = "...";
+
+if(
+patternRaw.includes("TÀI") ||
+patternRaw.includes("TAI")
+){
+pattern = "TÀI";
+}
+
+if(
+patternRaw.includes("XỈU") ||
+patternRaw.includes("XIU")
+){
+pattern = "XỈU";
+}
+
+// update phiên cũ
+if(historyData.length > 0){
+
+let old = historyData[0];
+
+if(old.statusText === ".."){
+
+if(pattern !== "..."){
+
+if(old.predict === pattern){
+
+old.statusText = "THẮNG";
+old.statusClass = "win";
+
+}else{
+
+old.statusText = "THUA";
+old.statusClass = "lose";
+
+}
+
+}
+
+}
+
+}
+
+// ===== DỰ ĐOÁN =====
+let predictRaw =
+(data.Du_doan || lastPredict).toUpperCase();
+
+let predict =
+predictRaw.includes("XỈU") ||
+predictRaw.includes("XIU")
+? "XỈU"
+: "TÀI";
+
+lastPredict = predict;
+
+// ===== ĐỘ TIN CẬY =====
+let confidence =
+Math.floor(
+(data.Du_doan_confidence || 0.5) * 100
+);
+
+// luôn > 50
+if(confidence < 50){
+
+confidence =
+Math.floor(Math.random()*30)+60;
+
+}
+
+// ===== UI =====
+const result =
+document.getElementById("result");
+
+result.innerText = predict;
+
+result.className =
+predict === "TÀI"
+? "result tai"
+: "result xiu";
+
+// phiên
+document.getElementById("session").innerText =
+"#" + session;
+
+// confidence
+document.getElementById("conf-text").innerText =
+confidence + "%";
+
+document.getElementById("bar").style.width =
+confidence + "%";
+
+// ===== ADD PHIÊN MỚI =====
+historyData.unshift({
+session: session,
+predict: predict,
+statusText: "..",
+statusClass: "wait"
+});
+
+// giới hạn
+historyData = historyData.slice(0,10);
+
+// render
+renderHistory();
+
+// lưu phiên
+currentSession = session;
+
+}catch(err){
+
+console.log("API ERROR:", err);
+
+// KHÔNG HIỆN ERROR
+// giữ dự đoán cũ
+
+}
+
+}
+
+// load lần đầu
 loadPredict();
 
-setInterval(loadPredict,5000);
+// cập nhật mỗi 2 giây
+setInterval(loadPredict,2000);
 
 </script>
 
