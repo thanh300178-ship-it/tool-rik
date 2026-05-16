@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RIKVIP AI PREDICTOR</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+--gold:#FFD700;
+--purple:#9d4dff;
+--pink:#ff2fd1;
+--red:#ff3366;
+--green:#00ffae;
+
+--font-main:'Montserrat',sans-serif;
+--font-num:'Orbitron',monospace;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+width:100%;
+min-height:100vh;
+
+overflow-y:auto;
+
+display:flex;
+align-items:flex-start;
+justify-content:center;
+
+padding:16px;
+
+font-family:var(--font-main);
+
+background:
+radial-gradient(circle at top,
+rgba(157,77,255,.22),
+transparent 35%),
+
+radial-gradient(circle at bottom right,
+rgba(255,47,209,.12),
+transparent 40%),
+
+linear-gradient(
+180deg,
+#090011,
+#020004
+);
+}
+
+canvas{
+position:fixed;
+inset:0;
+z-index:1;
+}
+
+.app{
+position:relative;
+z-index:2;
+
+width:88vw;
+max-width:340px;
+
+min-height:640px;
+
+overflow:hidden;
+
+border-radius:28px;
+
+background:
+linear-gradient(
+180deg,
+rgba(20,10,35,.94),
+rgba(6,0,12,.98)
+);
+
+border:
+1px solid rgba(255,255,255,.08);
+
+backdrop-filter:blur(18px);
+
+box-shadow:
+0 0 40px rgba(157,77,255,.18),
+0 0 100px rgba(255,47,209,.08);
+}
+
+/* TOPBAR */
+
+.topbar{
+height:68px;
+
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+padding:0 16px;
+
+border-bottom:
+1px solid rgba(255,255,255,.05);
+}
+
+.logo{
+font-size:20px;
+font-weight:900;
+
+font-family:var(--font-num);
+
+color:#fff;
+}
+
+.logo span{
+display:block;
+
+font-size:9px;
+
+margin-top:2px;
+
+letter-spacing:2px;
+
+color:#d6b4ff;
+}
+
+.timebox{
+padding:8px 12px;
+
+border-radius:12px;
+
+background:
+rgba(255,255,255,.04);
+
+border:
+1px solid rgba(255,255,255,.06);
+
+font-family:var(--font-num);
+
+font-size:10px;
+
+color:#FFD700;
+}
+
+/* USER */
+
+.user-card{
+width:92%;
+
+height:68px;
+
+margin:16px auto 0 auto;
+
+padding:0 14px;
+
+border-radius:20px;
+
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+background:
+linear-gradient(
+135deg,
+rgba(157,77,255,.14),
+rgba(255,47,209,.08)
+);
+
+border:
+1px solid rgba(255,255,255,.06);
+}
+
+.avatar{
+width:44px;
+height:44px;
+
+border-radius:50%;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:18px;
+font-weight:900;
+
+font-family:var(--font-num);
+
+color:#fff;
+
+background:
+linear-gradient(
+135deg,
+#8A2BE2,
+#ff2fd1
+);
+}
+
+.user-info{
+flex:1;
+margin-left:12px;
+}
+
+.user-name{
+font-size:12px;
+font-weight:800;
+color:#fff;
+}
+
+.user-rank{
+margin-top:3px;
+
+font-size:9px;
+font-weight:800;
+
+color:#d7b3ff;
+}
+
+.balance-value{
+font-size:11px;
+font-weight:900;
+
+font-family:var(--font-num);
+
+color:#FFD700;
+
+max-width:110px;
+
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap;
+}
+
+/* MAIN */
+
+.main-card{
+width:92%;
+
+margin:16px auto;
+
+padding:18px;
+
+border-radius:24px;
+
+background:
+linear-gradient(
+180deg,
+rgba(255,255,255,.04),
+rgba(255,255,255,.02)
+);
+
+border:
+1px solid rgba(255,255,255,.06);
+}
+
+.card-title{
+font-size:11px;
+font-weight:800;
+
+margin-bottom:16px;
+
+color:#fff;
+}
+
+/* CIRCLE */
+
+.circle{
+width:210px;
+height:210px;
+
+margin:auto;
+
+border-radius:50%;
+
+position:relative;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+background:
+radial-gradient(
+circle,
+rgba(20,0,35,.98),
+rgba(0,0,0,1)
+);
+}
+
+.circle::before{
+content:'';
+
+position:absolute;
+inset:-5px;
+
+border-radius:50%;
+
+background:
+conic-gradient(
+from 0deg,
+#FFD700,
+#ff2fd1,
+#8A2BE2,
+#FFD700
+);
+
+animation:spin 3s linear infinite;
+}
+
+.circle::after{
+content:'';
+
+position:absolute;
+inset:7px;
+
+border-radius:50%;
+
+background:
+radial-gradient(
+circle,
+rgba(20,0,35,.98),
+rgba(0,0,0,.98)
+);
+}
+
+@keyframes spin{
+100%{
+transform:rotate(360deg);
+}
+}
+
+.result{
+position:relative;
+z-index:3;
+
+font-size:52px;
+font-weight:900;
+
+font-family:var(--font-num);
+
+letter-spacing:3px;
+}
+
+.loading{
+color:#fff;
+font-size:18px;
+}
+
+.tai{
+color:#FFD700;
+}
+
+.xiu{
+color:#ff3366;
+}
+
+/* SESSION */
+
+.session-box{
+margin-top:18px;
+
+height:46px;
+
+border-radius:14px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+
+background:
+rgba(255,255,255,.04);
+
+border:
+1px solid rgba(255,255,255,.05);
+
+font-size:12px;
+font-weight:800;
+
+color:#d6b4ff;
+}
+
+.session-box span{
+font-family:var(--font-num);
+color:#fff;
+}
+
+/* CONF */
+
+.conf-wrap{
+margin-top:18px;
+}
+
+.conf-top{
+display:flex;
+justify-content:space-between;
+
+margin-bottom:8px;
+
+font-size:11px;
+font-weight:800;
+}
+
+.conf-top span:first-child{
+color:#fff;
+}
+
+#conf-text{
+color:#FFD700;
+}
+
+.progress{
+width:100%;
+height:10px;
+
+overflow:hidden;
+
+border-radius:20px;
+
+background:
+rgba(255,255,255,.05);
+}
+
+.progress-bar{
+height:100%;
+width:0%;
+
+border-radius:20px;
+
+background:
+linear-gradient(
+90deg,
+#8A2BE2,
+#ff2fd1,
+#FFD700
+);
+
+transition:.3s;
+}
+
+/* HISTORY */
+
+.history-card{
+width:92%;
+
+margin:auto auto 80px auto;
+
+border-radius:22px;
+
+overflow:hidden;
+
+background:
+linear-gradient(
+180deg,
+rgba(255,255,255,.03),
+rgba(255,255,255,.015)
+);
+
+border:
+1px solid rgba(255,255,255,.05);
+}
+
+.history-title{
+height:44px;
+
+display:flex;
+align-items:center;
+
+padding:0 16px;
+
+font-size:11px;
+font-weight:800;
+
+color:#fff;
+}
+
+.head{
+height:36px;
+
+display:grid;
+grid-template-columns:1.2fr 1fr 1fr .7fr;
+
+align-items:center;
+text-align:center;
+
+font-size:9px;
+font-weight:800;
+
+color:#d6b4ff;
+
+background:
+rgba(255,255,255,.02);
+}
+
+.body{
+max-height:280px;
+overflow-y:auto;
+}
+
+.body::-webkit-scrollbar{
+width:0;
+}
+
+.row{
+height:48px;
+
+display:grid;
+grid-template-columns:1.2fr 1fr 1fr .7fr;
+
+align-items:center;
+text-align:center;
+
+font-size:10px;
+font-weight:700;
+
+color:#eee;
+
+border-bottom:
+1px solid rgba(255,255,255,.04);
+}
+
+.badge{
+padding:5px 8px;
+
+border-radius:8px;
+
+font-size:9px;
+font-weight:900;
+
+display:inline-block;
+
+min-width:52px;
+}
+
+.b-tai{
+background:
+rgba(255,215,0,.12);
+
+border:
+1px solid rgba(255,215,0,.3);
+
+color:#FFD700;
+}
+
+.b-xiu{
+background:
+rgba(255,51,102,.12);
+
+border:
+1px solid rgba(255,51,102,.3);
+
+color:#ff3366;
+}
+
+.win{
+color:#00ffae;
+}
+
+.lose{
+color:#ff4f6d;
+}
+
+/* FOOTER */
+
+.footer{
+position:absolute;
+bottom:0;
+
+width:100%;
+height:60px;
+
+display:flex;
+align-items:center;
+justify-content:space-around;
+
+background:
+rgba(10,0,20,.95);
+
+border-top:
+1px solid rgba(255,255,255,.05);
+}
+
+.nav{
+font-size:10px;
+font-weight:800;
+
+color:#8f78b5;
+}
+
+.nav.active{
+color:#fff;
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="app">
+
+<div class="topbar">
+
+<div class="logo">
+RIKVIP
+<span>AI PREDICTOR</span>
+</div>
+
+<div class="timebox" id="clock">
+00:00:00
+</div>
+
+</div>
+
+<div class="user-card">
+
+<div class="avatar">
+R
+</div>
+
+<div class="user-info">
+
+<div class="user-name">
+RikVip User
+</div>
+
+<div class="user-rank">
+VIP MEMBER
+</div>
+
+</div>
+
+<div class="balance-value">
+khang quang36
+</div>
+
+</div>
+
+<div class="main-card">
+
+<div class="card-title">
+KẾT QUẢ DỰ ĐOÁN
+</div>
+
+<div class="circle">
+
+<div id="result"
+class="result loading">
+LOADING
+</div>
+
+</div>
+
+<div class="session-box">
+PHIÊN
+<span id="session">
+#000000
+</span>
+</div>
+
+<div class="conf-wrap">
+
+<div class="conf-top">
+
+<span>Độ Tin Cậy</span>
+
+<span id="conf-text">
+0%
+</span>
+
+</div>
+
+<div class="progress">
+
+<div id="progress"
+class="progress-bar">
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="history-card">
+
+<div class="history-title">
+LỊCH SỬ DỰ ĐOÁN
+</div>
+
+<div class="head">
+
+<div>PHIÊN</div>
+<div>DỰ ĐOÁN</div>
+<div>KQ</div>
+<div>AI</div>
+
+</div>
+
+<div class="body"
+id="history">
+</div>
+
+</div>
+
+<div class="footer">
+
+<div class="nav active">
+AI
+</div>
+
+<div class="nav">
+HISTORY
+</div>
+
+<div class="nav">
+VIP
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* CLOCK */
+setInterval(()=>{
+document.getElementById("clock").innerText =
+new Date().toLocaleTimeString('vi-VN',{hour12:false});
+},1000);
+
+/* ===== API FIX HOÀN TOÀN ===== */
+
+const API_URL="/predict";
+let lastSession=null;
+
+async function loadPredict(){
+try{
+
+const res = await fetch(API_URL, {cache:"no-store"});
+if(!res.ok) throw new Error("API not ready");
+
+const data = await res.json();
+
+// ===== LẤY SESSION AN TOÀN =====
+const session = data.Phien_hien_tai || data.Phien;
+if(!session) return;
+
+if(session == lastSession) return;
+lastSession = session;
+
+// ===== PREDICT =====
+let predict = (data.Du_doan || "").toUpperCase() === "TAI"
+? "TÀI" : "XỈU";
+
+// ===== CONFIDENCE =====
+let confidence = Math.floor(
+((data.Du_doan_confidence ?? data.Du_doan_probs?.Tai ?? 0.5)) * 100
+);
+
+// ===== UI =====
+document.getElementById("result").innerText = predict;
+document.getElementById("result").className =
+predict === "TÀI" ? "result tai" : "result xiu";
+
+document.getElementById("session").innerText = "#" + session;
+document.getElementById("conf-text").innerText = confidence + "%";
+document.getElementById("progress").style.width = confidence + "%";
+
+// ===== HISTORY =====
+// ===== HISTORY =====
+const history = document.getElementById("history");
+
+// kiểm tra đã có kết quả thật chưa
+const hasResult =
+data.Pattern &&
+data.Pattern !== "Chua co" &&
+data.Pattern !== "..." &&
+data.Du_doan &&
+data.Du_doan !== "Chua co";
+
+// tính thắng thua
+const isWin = hasResult &&
+(data.Pattern || "").toUpperCase() ===
+(data.Du_doan || "").toUpperCase();
+
+// text hiển thị
+let resultText = "...";
+let resultClass = "";
+
+if(hasResult){
+resultText = isWin ? "THẮNG" : "THUA";
+resultClass = isWin ? "win" : "lose";
+}
+
+// session
+const session =
+data.Phien_hien_tai ||
+data.Phien ||
+"----";
+
+// predict
+const predict =
+(data.Du_doan || "...").toUpperCase();
+
+// pattern
+const pattern =
+(data.Pattern || "...").toUpperCase();
+
+// tạo row
+const row = `
+<div class="row">
+
+<div class="phien">
+#${session}
+</div>
+
+<div>
+<span class="badge ${predict==="TÀI"?"b-tai":"b-xiu"}">
+${predict}
+</span>
+</div>
+
+<div>
+<span class="badge ${pattern==="TÀI"?"b-tai":"b-xiu"}">
+${pattern}
+</span>
+</div>
+
+<div class="${resultClass}">
+${resultText}
+</div>
+
+<div>AI</div>
+
+</div>
+`;
+
+// thêm history mới
+history.innerHTML = row + history.innerHTML;
+
+// giới hạn 15 dòng
+const rows = history.querySelectorAll(".row");
+
+if(rows.length > 15){
+rows[rows.length - 1].remove();
+}
+}  // ĐÓNG HÀM loadPredict
+
+/* START */
+loadPredict();
+setInterval(loadPredict,15000);
+
+</script>
+
+</body>
+</html>
