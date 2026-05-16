@@ -115,7 +115,7 @@ transform:rotate(360deg);
 .result{
 position:relative;
 z-index:2;
-font-size:38px;
+font-size:40px;
 font-weight:900;
 font-family:'Orbitron',sans-serif;
 }
@@ -327,7 +327,7 @@ LỊCH SỬ DỰ ĐOÁN
 <div class="head">
 <div>PHIÊN</div>
 <div>DỰ ĐOÁN</div>
-<div>KQ</div>
+<div>AI</div>
 </div>
 
 <div id="history-body"></div>
@@ -350,6 +350,9 @@ LỊCH SỬ DỰ ĐOÁN
 
 const API_URL="/predict";
 
+// chống spam history
+let lastSession = null;
+
 async function loadPredict(){
 
 try{
@@ -360,33 +363,35 @@ const data = await res.json();
 
 console.log(data);
 
-// ===== SESSION =====
-const session =
-data.phien ||
-data.Phien ||
-data.Phien_hien_tai ||
-Math.floor(Date.now()/1000);
+// ===== CHỈ LẤY PHIÊN HIỆN TẠI =====
+const session = data.Phien_hien_tai;
 
-// ===== PREDICT =====
-let raw =
-(
-data.dudoan ||
-data.Du_doan ||
-"TAI"
-).toUpperCase();
+if(!session) return;
+
+// ===== KHÔNG THÊM NẾU TRÙNG PHIÊN =====
+if(session == lastSession){
+return;
+}
+
+lastSession = session;
+
+// ===== DỰ ĐOÁN =====
+let predictRaw =
+(data.Du_doan || "Tài").toUpperCase();
 
 let predict =
-raw.includes("XIU")
+predictRaw.includes("XỈU") ||
+predictRaw.includes("XIU")
 ? "XỈU"
 : "TÀI";
 
-// ===== CONF =====
+// ===== ĐỘ TIN CẬY =====
 let confidence =
 Math.floor(
-(data.Du_doan_confidence || 0.87) * 100
+(data.Du_doan_confidence || 0.5) * 100
 );
 
-// ===== UPDATE UI =====
+// ===== UI =====
 const result =
 document.getElementById("result");
 
@@ -397,9 +402,11 @@ predict === "TÀI"
 ? "result tai"
 : "result xiu";
 
+// phiên hiện tại
 document.getElementById("session").innerText =
 "#" + session;
 
+// độ tin cậy
 document.getElementById("conf-text").innerText =
 confidence + "%";
 
@@ -433,6 +440,7 @@ AI
 history.innerHTML =
 row + history.innerHTML;
 
+// giới hạn 10 dòng
 const rows =
 history.querySelectorAll(".row");
 
@@ -451,8 +459,10 @@ document.getElementById("result").innerText =
 
 }
 
+// load lần đầu
 loadPredict();
 
+// mỗi 5 giây check phiên mới
 setInterval(loadPredict,5000);
 
 </script>
