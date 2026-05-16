@@ -725,95 +725,100 @@ VIP
 
 <script>
 
+<script>
+
 /* CLOCK */
 setInterval(()=>{
 document.getElementById("clock").innerText =
 new Date().toLocaleTimeString('vi-VN',{hour12:false});
 },1000);
 
-/* ===== API FIX HOÀN TOÀN ===== */
-
 const API_URL="/predict";
 let lastSession=null;
 
 async function loadPredict(){
+
 try{
 
-const res = await fetch(API_URL, {cache:"no-store"});
-if(!res.ok) throw new Error("API not ready");
+const res = await fetch(API_URL,{
+cache:"no-store"
+});
+
+if(!res.ok){
+throw new Error("API lỗi");
+}
 
 const data = await res.json();
 
-// ===== LẤY SESSION AN TOÀN =====
-const session = data.Phien_hien_tai || data.Phien;
-if(!session) return;
+console.log(data);
 
-if(session == lastSession) return;
-lastSession = session;
-
-// ===== PREDICT =====
-let predict = (data.Du_doan || "").toUpperCase() === "TAI"
-? "TÀI" : "XỈU";
-
-// ===== CONFIDENCE =====
-let confidence = Math.floor(
-((data.Du_doan_confidence ?? data.Du_doan_probs?.Tai ?? 0.5)) * 100
-);
-
-// ===== UI =====
-document.getElementById("result").innerText = predict;
-document.getElementById("result").className =
-predict === "TÀI" ? "result tai" : "result xiu";
-
-document.getElementById("session").innerText = "#" + session;
-document.getElementById("conf-text").innerText = confidence + "%";
-document.getElementById("progress").style.width = confidence + "%";
-
-// ===== HISTORY =====
-// ===== HISTORY =====
-const history = document.getElementById("history");
-
-// kiểm tra đã có kết quả thật chưa
-const hasResult =
-data.Pattern &&
-data.Pattern !== "Chua co" &&
-data.Pattern !== "..." &&
-data.Du_doan &&
-data.Du_doan !== "Chua co";
-
-// tính thắng thua
-const isWin = hasResult &&
-(data.Pattern || "").toUpperCase() ===
-(data.Du_doan || "").toUpperCase();
-
-// text hiển thị
-let resultText = "...";
-let resultClass = "";
-
-if(hasResult){
-resultText = isWin ? "THẮNG" : "THUA";
-resultClass = isWin ? "win" : "lose";
-}
-
-// session
+// SESSION
 const session =
 data.Phien_hien_tai ||
 data.Phien ||
-"----";
+Date.now();
 
-// predict
-const predict =
-(data.Du_doan || "...").toUpperCase();
+if(session == lastSession) return;
 
-// pattern
+lastSession = session;
+
+// DỰ ĐOÁN
+let predictRaw =
+(data.Du_doan || "TAI").toUpperCase();
+
+let predict =
+predictRaw.includes("XIU")
+? "XỈU"
+: "TÀI";
+
+// CONF
+let confidence = Math.floor(
+(data.Du_doan_confidence || 0.85) * 100
+);
+
+if(confidence < 50){
+confidence = 85;
+}
+
+// UI
+const resultEl =
+document.getElementById("result");
+
+resultEl.innerText = predict;
+
+resultEl.className =
+predict === "TÀI"
+? "result tai"
+: "result xiu";
+
+document.getElementById("session").innerText =
+"#" + session;
+
+document.getElementById("conf-text").innerText =
+confidence + "%";
+
+document.getElementById("progress").style.width =
+confidence + "%";
+
+// HISTORY
+const history =
+document.getElementById("history");
+
 const pattern =
 (data.Pattern || "...").toUpperCase();
 
-// tạo row
+const hasResult =
+pattern !== "..." &&
+pattern !== "CHUA CO";
+
+const isWin =
+hasResult &&
+pattern === predictRaw;
+
 const row = `
 <div class="row">
 
-<div class="phien">
+<div>
 #${session}
 </div>
 
@@ -824,34 +829,42 @@ ${predict}
 </div>
 
 <div>
-<span class="badge ${pattern==="TÀI"?"b-tai":"b-xiu"}">
+<span class="badge ${pattern==="TAI"?"b-tai":"b-xiu"}">
 ${pattern}
 </span>
 </div>
 
-<div class="${resultClass}">
-${resultText}
+<div class="${isWin?"win":"lose"}">
+${hasResult ? (isWin ? "THẮNG" : "THUA") : "..."}
 </div>
-
-<div>AI</div>
 
 </div>
 `;
 
-// thêm history mới
-history.innerHTML = row + history.innerHTML;
+history.innerHTML =
+row + history.innerHTML;
 
-// giới hạn 15 dòng
-const rows = history.querySelectorAll(".row");
+const rows =
+history.querySelectorAll(".row");
 
 if(rows.length > 15){
 rows[rows.length - 1].remove();
 }
-}  // ĐÓNG HÀM loadPredict
 
-/* START */
+}catch(err){
+
+console.log("Lỗi API:",err);
+
+document.getElementById("result").innerText =
+"ERROR";
+
+}
+
+}
+
 loadPredict();
-setInterval(loadPredict,15000);
+
+setInterval(loadPredict,5000);
 
 </script>
 
