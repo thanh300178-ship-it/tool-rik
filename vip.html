@@ -727,66 +727,55 @@ VIP
 
 <script>
 
-/* CLOCK */
 setInterval(()=>{
 document.getElementById("clock").innerText =
 new Date().toLocaleTimeString('vi-VN',{hour12:false});
 },1000);
 
 const API_URL="/predict";
-let lastSession=null;
 
 async function loadPredict(){
 
 try{
 
-const res = await fetch(API_URL,{
-cache:"no-store"
-});
-
-if(!res.ok){
-throw new Error("API lỗi");
-}
+const res = await fetch(API_URL + "?t=" + Date.now());
 
 const data = await res.json();
 
 console.log(data);
 
-// SESSION
+// ===== SESSION =====
 const session =
-data.Phien_hien_tai ||
+data.phien ||
 data.Phien ||
-Date.now();
+data.Phien_hien_tai ||
+Math.floor(Date.now()/1000);
 
-if(session == lastSession) return;
-
-lastSession = session;
-
-// DỰ ĐOÁN
+// ===== PREDICT =====
 let predictRaw =
-(data.Du_doan || "TAI").toUpperCase();
+(
+data.dudoan ||
+data.Du_doan ||
+"TAI"
+).toUpperCase();
 
 let predict =
 predictRaw.includes("XIU")
 ? "XỈU"
 : "TÀI";
 
-// CONF
+// ===== CONF =====
 let confidence = Math.floor(
-(data.Du_doan_confidence || 0.85) * 100
+(data.Du_doan_confidence || 0.87) * 100
 );
 
-if(confidence < 50){
-confidence = 85;
-}
-
-// UI
-const resultEl =
+// ===== UI =====
+const result =
 document.getElementById("result");
 
-resultEl.innerText = predict;
+result.innerText = predict;
 
-resultEl.className =
+result.className =
 predict === "TÀI"
 ? "result tai"
 : "result xiu";
@@ -800,20 +789,9 @@ confidence + "%";
 document.getElementById("progress").style.width =
 confidence + "%";
 
-// HISTORY
+// ===== HISTORY =====
 const history =
 document.getElementById("history");
-
-const pattern =
-(data.Pattern || "...").toUpperCase();
-
-const hasResult =
-pattern !== "..." &&
-pattern !== "CHUA CO";
-
-const isWin =
-hasResult &&
-pattern === predictRaw;
 
 const row = `
 <div class="row">
@@ -829,13 +807,13 @@ ${predict}
 </div>
 
 <div>
-<span class="badge ${pattern==="TAI"?"b-tai":"b-xiu"}">
-${pattern}
+<span class="badge ${predict==="TÀI"?"b-tai":"b-xiu"}">
+...
 </span>
 </div>
 
-<div class="${isWin?"win":"lose"}">
-${hasResult ? (isWin ? "THẮNG" : "THUA") : "..."}
+<div class="win">
+AI
 </div>
 
 </div>
@@ -851,9 +829,9 @@ if(rows.length > 15){
 rows[rows.length - 1].remove();
 }
 
-}catch(err){
+}catch(e){
 
-console.log("Lỗi API:",err);
+console.log(e);
 
 document.getElementById("result").innerText =
 "ERROR";
@@ -867,6 +845,5 @@ loadPredict();
 setInterval(loadPredict,5000);
 
 </script>
-
 </body>
 </html>
