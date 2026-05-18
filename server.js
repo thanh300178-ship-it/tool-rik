@@ -10,7 +10,7 @@ app.get('/predict', async (req, res) => {
 try {
 
 const response = await fetch(
-'https://api-rikvippro-7.onrender.com/api/md5',
+'https://api-rikvippro.onrender.com/api/md5',
 {
 method: 'GET',
 headers: {
